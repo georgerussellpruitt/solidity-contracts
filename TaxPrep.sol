@@ -9,15 +9,22 @@ pragma solidity >=0.7.0 <0.8.0;
 contract TaxPrep {
 
 	address private owner;
-	address private paymentAddress;
-	address private taxAddress;
-	uint256 totalReceived;
-	uint256 withdrawAmount;
-	uint256 storedTax;
 
+	uint256 totalReceived;
+	uint256 taxRate;
+
+    mapping (uint => taxable) payments;
+
+    struct taxable {
+        address sender;
+        uint256 amount;
+    }
 
 	// event for EVM logging
 	event OwnerSet(address indexed oldOwner, address indexed newOwner);
+	event TaxRateSet(uint256 indexed oldRate, uint256 indexed newRate);
+	event ReceivedPayment(address indexed sender, uint256 indexed amount);
+
 
 	constructor() {
 		owner = msg.sender; 
@@ -28,16 +35,24 @@ contract TaxPrep {
 		require(msg.sender == owner, "Contract Owner Required");
 		_;
 	}
-	
-	function changeOwner(address newOwner) public isOwner {
+
+	function changeTaxRate(uint256 newRate) external isOwner {
+	    emit TaxRateSet(taxRate,newRate);
+        taxRate = newRate;
+	}
+
+	function changeOwner(address newOwner) external isOwner {
 		emit OwnerSet(owner, newOwner);
 		owner = newOwner;
 	}
 
-	function acceptTaxablePayment(uint256 num) public payable {
-		uint256 newTotal = totalReceived + num;
-		totalReceived = newTotal;
-		
+	function receivePayment() external payable {
+	    // update totalReceived
+		totalReceived += msg.value;
+		uint256 taxAmount = msg.value * taxRate;
+		taxable memory incoming = taxable(msg.sender,msg.value);
+		emit ReceivedPayment(msg.sender,msg.value);
+
 	}
 
 	
