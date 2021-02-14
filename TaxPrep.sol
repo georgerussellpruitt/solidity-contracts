@@ -13,9 +13,9 @@ contract TaxPrep {
 	uint256 totalReceived;
 	uint256 taxRate;
 
-    mapping (uint => taxable) payments;
+    mapping (uint => Payment) payments;
 
-    struct taxable {
+    struct Payment {
         address sender;
         uint256 amount;
     }
@@ -24,7 +24,6 @@ contract TaxPrep {
 	event OwnerSet(address indexed oldOwner, address indexed newOwner);
 	event TaxRateSet(uint256 indexed oldRate, uint256 indexed newRate);
 	event ReceivedPayment(address indexed sender, uint256 indexed amount);
-
 
 	constructor() {
 		owner = msg.sender; 
@@ -50,10 +49,10 @@ contract TaxPrep {
 	    // update totalReceived
 		totalReceived += msg.value;
 		uint256 taxAmount = msg.value * taxRate;
-		taxable memory incoming = taxable(msg.sender,msg.value);
+		uint256 clearAmount = msg.value - taxAmount;
+		Payment incoming = Payment(msg.sender,msg.value,clearAmount,taxAmount);
+		this.payments.push(incoming);
 		emit ReceivedPayment(msg.sender,msg.value);
-
 	}
 
-	
 }
