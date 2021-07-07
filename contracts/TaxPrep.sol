@@ -20,10 +20,16 @@ contract TaxPrep {
 		uint256 netAmount;
 	}
 
-	Payment[] public payments;
+	struct Payee {
+		address wallet;
+		mapping(uint256 => Payment) payments;
+	}
+
+	mapping(address => Payee) payees;
 
 	// event for EVM logging
 	event OwnerSet(address indexed oldOwner, address indexed newOwner);
+	event PaymentReceived(address sender, uint256 netAmount);
 
 	constructor() {
 		owner = msg.sender; 
@@ -46,9 +52,9 @@ contract TaxPrep {
 	function receivePayment() external payable {
 		uint256 taxed = msg.value * taxRate;
 		uint256 net = msg.value - taxed;
-		Payment[] storage savedPayments = payments;
 		Payment memory incoming = Payment(msg.sender,msg.value,taxed,net);
-		savedPayments.push(incoming);
+		emit PaymentReceived(msg.sender, net);
+		payees[msg.sender].payments[block.timestamp] = incoming;
 	}
 
 }
